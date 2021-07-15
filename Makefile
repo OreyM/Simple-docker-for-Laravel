@@ -4,11 +4,23 @@ define chdir
 	$(info $(MAKE): cd $(_D)) $(eval SHELL = cd $(_D); $(CHDIR_SHELL))
 endef
 
+ifeq (c:require,$(firstword $(MAKECMDGOALS)))
+  ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+endif
+
+ifeq (c:require:dev,$(firstword $(MAKECMDGOALS)))
+  ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+endif
+
 ifeq (l,$(firstword $(MAKECMDGOALS)))
   ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 endif
 
 ifeq (l:controller,$(firstword $(MAKECMDGOALS)))
+  ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+endif
+
+ifeq (l:factory,$(firstword $(MAKECMDGOALS)))
   ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 endif
 
@@ -50,6 +62,12 @@ dc-pull:
 dc-build:
 	docker-compose build
 
+# COMPOSER
+c\:require:
+	docker-compose exec php composer require $(ARGS)
+c\:require\:dev:
+	docker-compose exec php composer require $(ARGS) --dev
+
 # LARAVEL
 .ONESHELL: # Only applies to all target
 l\:install:
@@ -69,6 +87,8 @@ l\:crv:
 	docker-compose exec php php /var/www/html/artisan config:cache && docker-compose exec php php /var/www/html/artisan view:clear && docker-compose exec php php /var/www/html/artisan route:cache
 l\:controller:
 	docker-compose exec php php /var/www/html/artisan make:controller $(ARGS)
+l\:factory:
+	docker-compose exec php php /var/www/html/artisan make:factory $(ARGS) --model=$(model)
 l\:fresh:
 	docker-compose exec php php /var/www/html/artisan migrate:fresh
 l\:refresh:
